@@ -26,6 +26,11 @@ def parse_args():
     parser.add_argument('-weights', type=str, default = 0, help='the weights file you want to test')
     parser.add_argument('-multimask_output', type=int, default=1 , help='the number of masks output for multi-class segmentation')
     parser.add_argument('-memory_bank_size', type=int, default=16, help='sam 2d memory bank size')
+
+    # We need this for the MSD datasets
+    parser.add_argument('-fold', type=int, default=0, help='MSD dataset fold of cross validation')
+    parser.add_argument('-modalities', type=int, default=1, help='MSD dataset numer of modalities')
+
     parser.add_argument(
     '-data_path',
     type=str,

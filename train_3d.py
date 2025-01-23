@@ -22,9 +22,12 @@ def main():
 
     args = cfg.parse_args()
 
-    GPUdevice = torch.device('cuda', args.gpu_device)
+    if args.gpu:
+        device = torch.device('cuda', args.gpu_device)
+    else:
+        device = torch.device('cpu')
 
-    net = get_network(args, args.net, use_gpu=args.gpu, gpu_device=GPUdevice, distribution = args.distributed)
+    net = get_network(args, args.net, use_gpu=args.gpu, gpu_device=device, distribution = args.distributed)
     net.to(dtype=torch.bfloat16)
     if args.pretrain:
         print(args.pretrain)
@@ -54,9 +57,10 @@ def main():
         optimizer2 = optim.Adam(mem_layers, lr=1e-8, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
     # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #learning rate decay
 
-    torch.autocast(device_type="cuda", dtype=torch.bfloat16).__enter__()
+    if args.gpu:
+        torch.autocast(device_type="cuda", dtype=torch.bfloat16).__enter__()
 
-    if torch.cuda.get_device_properties(0).major >= 8:
+    if args.gpu and  torch.cuda.get_device_properties(0).major >= 8:
         # turn on tfloat32 for Ampere GPUs (https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
@@ -104,6 +108,10 @@ def main():
             logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
 
             torch.save({'model': net.state_dict()}, os.path.join(args.path_helper['ckpt_path'], 'latest_epoch.pth'))
+
+            if edice > best_dice:
+                best_dice = edice
+                torch.save({'model': net.state_dict()}, os.path.join(args.path_helper['ckpt_path'], 'best_epoch.pth'))
 
     writer.close()
 

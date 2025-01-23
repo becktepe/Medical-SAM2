@@ -66,6 +66,11 @@ Python Version: 3.12.4
 
  ``python train_3d.py -net sam2 -exp_name BTCV_MedSAM2 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -val_freq 1 -prompt bbox -prompt_freq 2 -dataset btcv -data_path ./data/btcv``
 
+### 3D case - MSD datasets ###
+
+```bash
+python train_3d.py -net sam2 -exp_name REFUGE_MedSAM2 -vis 1 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -out_size 1024 -b 4 -val_freq 1 -dataset Dataset002_Heart -gpu false -fold 0 -modalities 1
+```
 
 ## 🚨 News
 - 24-12-04. Our Medical SAM 2 paper was updated on Arxiv with new insights and results

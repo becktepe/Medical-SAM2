@@ -29,7 +29,8 @@ def get_network(args, net, use_gpu=True, gpu_device = 0, distribution = True):
         sam2_checkpoint = args.sam_ckpt
         model_cfg = args.sam_config
 
-        net = build_sam2_video_predictor(config_file=model_cfg, ckpt_path=sam2_checkpoint, mode=None)
+        device = "cuda" if args.gpu else "cpu"
+        net = build_sam2_video_predictor(config_file=model_cfg, device=device, ckpt_path=sam2_checkpoint, mode=None)
     else:
         print('the network name you have entered is not supported yet')
         sys.exit()
@@ -166,13 +167,16 @@ def eval_seg(pred,true_mask_p,threshold):
             
         return iou_d / len(threshold), iou_c / len(threshold), disc_dice / len(threshold), cup_dice / len(threshold)
     elif c > 2: # for multi-class segmentation > 2 classes
-        ious = [0] * c
-        dices = [0] * c
+        ious = [0] * (c - 1)
+        dices = [0] * (c - 1)
+
         for th in threshold:
             gt_vmask_p = (true_mask_p > th).float()
             vpred = (pred > th).float()
             vpred_cpu = vpred.cpu()
-            for i in range(0, c):
+
+            # We skip the background class to be comparable to nnU-Net
+            for i in range(1, c):
                 pred = vpred_cpu[:,i,:,:].numpy().astype('int32')
                 mask = gt_vmask_p[:,i,:,:].squeeze(1).cpu().numpy().astype('int32')
         

@@ -1,5 +1,6 @@
 from .btcv import BTCV
 from .amos import AMOS
+from .msd import MSD
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
@@ -42,7 +43,14 @@ def get_dataloader(args):
         nice_train_loader = DataLoader(amos_train_dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
         nice_test_loader = DataLoader(amos_test_dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
         '''end'''
+    elif "Dataset" in args.dataset:
+        '''MSD data'''
+        msd_train_dataset = MSD(args, args.dataset, fold=args.fold, modalities=args.modalities, transform = None, transform_msk= None, mode = 'train', prompt=args.prompt)
+        msd_test_dataset = MSD(args, args.dataset,  fold=args.fold, modalities=args.modalities, transform = None, transform_msk= None, mode = 'val', prompt=args.prompt)
 
+        nice_train_loader = DataLoader(msd_train_dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
+        nice_test_loader = DataLoader(msd_test_dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
+        '''end'''
     else:
         print("the dataset is not supported now!!!")
         

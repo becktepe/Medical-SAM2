@@ -9,6 +9,9 @@ import os
 import time
 
 import torch
+import numpy as np
+import pandas as pd
+import random
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 
@@ -20,6 +23,13 @@ from func_3d.dataset import get_dataloader
 
 def main():
     args = cfg.parse_args()
+
+    seed = int(args.seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)    # noqa: NPY002
+    random.seed(seed)
 
     device = torch.device('cuda', args.gpu_device)
     net = get_network(args, args.net, use_gpu=args.gpu, gpu_device=device, distribution = args.distributed)
@@ -78,16 +88,17 @@ def main():
         os.makedirs(checkpoint_path)
     checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}.pth')
 
+
+    train_logs = []
+    val_logs = []
+
     '''begain training'''
     best_acc = 0.0
     best_tol = 1e4
     best_dice = 0.0
 
-    for epoch in range(settings.EPOCH):
-
-        # if epoch < 5:
-        #     tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
-        #     logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+    # for epoch in range(settings.EPOCH):
+    for epoch in range(2):
         net.train()
         time_start = time.time()
         loss, prompt_loss, non_prompt_loss = function.train_sam(args, net, optimizer1, optimizer2, nice_train_loader, epoch)
@@ -95,11 +106,26 @@ def main():
         time_end = time.time()
         print('time_for_training ', time_end - time_start)
 
+        train_logs += [{
+            "epoch": epoch,
+            "loss": loss,
+            "prompt_loss": prompt_loss,
+            "non_prompt_loss": non_prompt_loss,
+            "time": time_end - time_start
+        }]
+
         net.eval()
         if epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
             tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
             
             logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+
+            val_logs += [{
+                "epoch": epoch,
+                "total_score": tol,
+                "iou": eiou,
+                "dice": edice
+            }]
 
             torch.save({'model': net.state_dict()}, os.path.join(args.path_helper['ckpt_path'], 'latest_epoch.pth'))
 
@@ -109,6 +135,8 @@ def main():
 
     writer.close()
 
-
+    pd.DataFrame(train_logs).to_csv("train_logs.csv")
+    pd.DataFrame(val_logs).to_csv("val_logs.csv")
+    
 if __name__ == '__main__':
     main()

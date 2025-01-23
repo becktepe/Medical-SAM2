@@ -9,26 +9,34 @@ from torch.utils.data import Dataset
 from pathlib import Path    
 from func_3d.utils import random_click, generate_bbox
 import json
-
-RELATIVE_DATASET_PATH = Path(".").resolve().parent / "MSC-JannisBecktepe-AutoNNUnet" / "data"
+import os
 
 
 class MSD(Dataset):
-    def __init__(self, args, dataset: str, fold: int, modalities: int = 1, transform = None, transform_msk = None, mode = 'train', prompt = 'click', seed=None, variation=0):
-        self.raw_folder = RELATIVE_DATASET_PATH / "nnUNet_raw" / dataset 
-        self.preprocessed_folder = RELATIVE_DATASET_PATH / "nnUNet_preprocessed" / dataset
+    def __init__(self, args, dataset: str, fold: int, transform = None, transform_msk = None, mode = 'train', prompt = 'click', seed=None, variation=0):
+        nnunet_raw = Path(os.environ.get("nnUNet_raw", "../data/nnUNet_raw")).resolve()
+        nnunet_preprossed = Path(os.environ.get("nnUNet_preprocessed", "../data/nnUNet_preprocessed")).resolve()
+
+        assert nnunet_raw.exists()
+        assert nnunet_preprossed.exists()
+
+        self.raw_folder = nnunet_raw / dataset 
+        self.preprocessed_folder = nnunet_preprossed / dataset
 
         self.fold = fold
-        self.modalities = modalities
 
-        # Load the splits from json
+        with open(self.preprocessed_folder / "dataset.json", "r") as f:
+            dataset_info = json.load(f)
+
+        self.n_channels = len(dataset_info["channel_names"])
+
         with open(self.preprocessed_folder / "splits_final.json", "r") as f:
             splits = json.load(f)
 
         self.train_imgs = []
         self.val_imgs = []
         for name in splits[fold][mode]:
-            for i in range(modalities):
+            for i in range(self.n_channels):
                 # integer with 4 digits, i.e. leading zeros
                 self.train_imgs += [f"{name}_{'%04d' % i}.nii.gz"]
             self.val_imgs += [f"{name}.nii.gz"]

@@ -69,7 +69,7 @@ Python Version: 3.12.4
 ### 3D case - MSD datasets ###
 
 ```bash
-python train_3d.py -net sam2 -exp_name REFUGE_MedSAM2 -vis 1 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -out_size 1024 -b 4 -val_freq 1 -dataset Dataset002_Heart -gpu false -fold 0 -modalities 1
+python train_3d.py -net sam2 -exp_name Dataset002_Heart_fold_0 -vis 1 -sam_ckpt ./checkpoints/sam2_hiera_small.pt -sam_config sam2_hiera_s -image_size 1024 -out_size 1024 -b 4 -val_freq 1 -dataset Dataset002_Heart -gpu true -fold 0 -seed 0
 ```
 
 ## 🚨 News

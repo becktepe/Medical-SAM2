@@ -96,47 +96,62 @@ def main():
     best_acc = 0.0
     best_tol = 1e4
     best_dice = 0.0
-
-    # for epoch in range(settings.EPOCH):
-    for epoch in range(2):
-        net.train()
-        time_start = time.time()
-        loss, prompt_loss, non_prompt_loss = function.train_sam(args, net, optimizer1, optimizer2, nice_train_loader, epoch)
-        logger.info(f'Train loss: {loss}, {prompt_loss}, {non_prompt_loss} || @ epoch {epoch}.')
-        time_end = time.time()
-        print('time_for_training ', time_end - time_start)
-
-        train_logs += [{
-            "epoch": epoch,
-            "loss": loss,
-            "prompt_loss": prompt_loss,
-            "non_prompt_loss": non_prompt_loss,
-            "time": time_end - time_start
+    
+    if args.mode == "zero_shot":
+        tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, 0, net, writer)
+        logger.info(f'Initial score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {0}.')
+        
+        val_logs += [{
+            "epoch": 0,
+            "total_score": tol.cpu().item(),
+            "iou": eiou,
+            "dice": edice
         }]
 
-        net.eval()
-        if epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
-            tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
-            
-            logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+    elif args.mode == "finetune":
+        for epoch in range(args.n_epochs):
+            net.train()
+            time_start = time.time()
+            loss, prompt_loss, non_prompt_loss = function.train_sam(args, net, optimizer1, optimizer2, nice_train_loader, epoch)
+            logger.info(f'Train loss: {loss}, {prompt_loss}, {non_prompt_loss} || @ epoch {epoch}.')
+            time_end = time.time()
+            print('time_for_training ', time_end - time_start)
 
-            val_logs += [{
+            train_logs += [{
                 "epoch": epoch,
-                "total_score": tol,
-                "iou": eiou,
-                "dice": edice
+                "loss": loss,
+                "prompt_loss": prompt_loss,
+                "non_prompt_loss": non_prompt_loss,
+                "time": time_end - time_start
             }]
 
-            torch.save({'model': net.state_dict()}, os.path.join(args.path_helper['ckpt_path'], 'latest_epoch.pth'))
+            net.eval()
+            if epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
+                tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
+                
+                logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
 
-            if edice > best_dice:
-                best_dice = edice
-                torch.save({'model': net.state_dict()}, os.path.join(args.path_helper['ckpt_path'], 'best_epoch.pth'))
+                val_logs += [{
+                    "epoch": epoch,
+                    "total_score": tol.cpu().item(),
+                    "iou": eiou,
+                    "dice": edice
+                }]
+
+                torch.save({'model': net.state_dict()}, 'latest_epoch.pth')
+
+                if edice > best_dice:
+                    best_dice = edice
+                    torch.save({'model': net.state_dict()}, 'best_epoch.pth')
+
+    else:
+        raise ValueError(f"Invalid mode: {cfg.mode}")
 
     writer.close()
 
-    pd.DataFrame(train_logs).to_csv("train_logs.csv")
-    pd.DataFrame(val_logs).to_csv("val_logs.csv")
+    if len(train_logs) > 0:
+        pd.DataFrame(train_logs).to_csv("train_logs.csv", index=False)
+    pd.DataFrame(val_logs).to_csv("val_logs.csv", index=False)
     
 if __name__ == '__main__':
     main()

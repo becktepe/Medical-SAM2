@@ -29,8 +29,12 @@ def parse_args():
 
     # We need this for the MSD datasets
     parser.add_argument('-fold', type=int, default=0, help='MSD dataset fold of cross validation')
-    parser.add_argument('-modalities', type=int, default=1, help='MSD dataset numer of modalities')
     parser.add_argument('-seed', type=int, default=0, help='experiment seed')
+    parser.add_argument('-n_train_workers', type=int, default=8, help='number of workers for training dataloader')
+    parser.add_argument('-n_test_workers', type=int, default=1, help='number of workers for testing dataloader')
+    parser.add_argument('-n_epochs', type=int, default=100, help='number of training epochs')
+    parser.add_argument('-mode', type=str, default="zero_shot", help="'zero_shot' or 'finetune'")
+
 
     parser.add_argument(
     '-data_path',

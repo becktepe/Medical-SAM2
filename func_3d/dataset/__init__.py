@@ -48,8 +48,8 @@ def get_dataloader(args):
         msd_train_dataset = MSD(args, args.dataset, fold=args.fold, transform = None, transform_msk= None, mode = 'train', prompt=args.prompt)
         msd_test_dataset = MSD(args, args.dataset,  fold=args.fold, transform = None, transform_msk= None, mode = 'val', prompt=args.prompt)
 
-        nice_train_loader = DataLoader(msd_train_dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
-        nice_test_loader = DataLoader(msd_test_dataset, batch_size=1, shuffle=False, num_workers=1, pin_memory=True)
+        nice_train_loader = DataLoader(msd_train_dataset, batch_size=1, shuffle=True, num_workers=args.n_train_workers, pin_memory=True)
+        nice_test_loader = DataLoader(msd_test_dataset, batch_size=1, shuffle=False, num_workers=args.n_test_workers, pin_memory=True)
         '''end'''
     else:
         print("the dataset is not supported now!!!")

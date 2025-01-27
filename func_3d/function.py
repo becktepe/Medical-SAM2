@@ -79,7 +79,6 @@ def train_sam(args, net: nn.Module, optimizer1, optimizer2, train_loader,
             elif prompt == 'bbox':
                 bbox_dict = pack['bbox']
             imgs_tensor = imgs_tensor.squeeze(0)
-            imgs_tensor = imgs_tensor.to(dtype = torch.float32, device = GPUdevice)
             
             train_state = net.train_init_state(imgs_tensor=imgs_tensor)
             prompt_frame_id = list(range(0, video_length, prompt_freq))
@@ -221,7 +220,7 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
             if len(imgs_tensor.size()) == 5:
                 imgs_tensor = imgs_tensor.squeeze(0)
             frame_id = list(range(imgs_tensor.size(0)))
-            
+
             train_state = net.val_init_state(imgs_tensor=imgs_tensor)
             prompt_frame_id = list(range(0, len(frame_id), prompt_freq))
             obj_list = []
